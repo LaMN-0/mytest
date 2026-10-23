@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ハスター 触手ヒットカウンター</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: #0b0c10;
+      color: #c5c6c7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 15px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    header {
+      text-align: center;
+      padding: 5px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      color: #f39c12;
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(243, 156, 18, 0.4);
+    }
+
+    .btn-pip {
+      background: #f39c12;
+      color: #0b0c10;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
+    }
+
+    .btn-pip:active {
+      transform: scale(0.98);
+    }
+
+    /* 目標設定カード */
+    .goal-card {
+      background: #1f2833;
+      border: 1px solid #2c3e50;
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .goal-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .goal-label {
+      font-size: 0.85rem;
+      color: #f39c12;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .goal-input {
+      flex: 1;
+      background: #0b0c10;
+      border: 1px solid #45a29e;
+      color: #66fcf1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: bold;
+      text-align: center;
+      outline: none;
+      user-select: text;
+    }
+
+    .btn-goal-set {
+      padding: 6px 14px;
+      background: #45a29e;
+      border: none;
+      color: #0b0c10;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .goal-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #8892b0;
+    }
+
+    .remain-val {
+      color: #66fcf1;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .goal-achieved {
+      color: #2ecc71;
+      font-weight: bold;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: #0b0c10;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #2c3e50;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #d35400, #f39c12);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .counter-card {
+      background: #1f2833;
+      border: 2px solid #f39c12;
+      border-radius: 16px;
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(243, 156, 18, 0.15);
+    }
+
+    .match-tag {
+      display: inline-block;
+      background: rgba(243, 156, 18, 0.15);
+      border: 1px solid #f39c12;
+      color: #f39c12;
+      font-size: 0.95rem;
+      font-weight: bold;
+      padding: 4px 16px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+
+    .display-group {
+      display: flex;
+      gap: 10px;
+      margin: 8px 0 16px 0;
+    }
+
+    .display-box {
+      flex: 1;
+      background: #0b0c10;
+      border-radius: 12px;
+      padding: 12px 8px;
+      border: 1px solid #2c3e50;
+    }
+
+    .counter-label {
+      font-size: 0.8rem;
+      color: #8892b0;
+      margin-bottom: 4px;
+    }
+
+    .counter-display {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: #f39c12;
+      line-height: 1.1;
+      text-shadow: 0 0 10px rgba(243, 156, 18, 0.4);
+    }
+
+    .btn-main {
+      width: 100%;
+      height: 90px;
+      background: linear-gradient(135deg, #d35400, #f39c12);
+      border: none;
+      border-radius: 14px;
+      color: #ffffff;
+      font-size: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 15px rgba(211, 84, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-main:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 8px rgba(211, 84, 0, 0.4);
+    }
+
+    .calc-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn-calc {
+      flex: 1;
+      padding: 12px;
+      background: #0b0c10;
+      border: 1px solid #f39c12;
+      color: #f39c12;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-calc:active {
+      background: #1f2833;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn-sub {
+      flex: 1;
+      padding: 14px 10px;
+      border: 1px solid #45a29e;
+      background: #0b0c10;
+      color: #66fcf1;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-sub:active {
+      background: #1f2833;
+    }
+
+    .btn-danger {
+      border-color: #e74c3c;
+      color: #e74c3c;
+    }
+
+    .btn-undo {
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      border: 1px dashed #8892b0;
+      color: #8892b0;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .stats-card {
+      background: #1f2833;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #2c3e50;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+    }
+
+    .stats-title {
+      font-size: 1rem;
+      color: #f39c12;
+    }
+
+    .btn-clear-all {
+      background: transparent;
+      border: 1px solid #e74c3c;
+      color: #e74c3c;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-clear-all:active {
+      background: rgba(231, 76, 60, 0.2);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+      gap: 8px;
+    }
+
+    .stat-box {
+      background: #0b0c10;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .stat-val {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #66fcf1;
+    }
+
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: #8892b0;
+      margin-top: 2px;
+    }
+
+    .history-card {
+      background: #1f2833;
+      border-radius: 12px;
+      padding: 16px;
+      flex-grow: 1;
+    }
+
+    .history-list {
+      list-style: none;
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      background: #0b0c10;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .shortcuts-guide {
+      font-size: 0.75rem;
+      color: #666666;
+      text-align: center;
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+
+    .pip-placeholder {
+      display: none;
+      text-align: center;
+      padding: 30px 10px;
+      background: #1f2833;
+      border: 2px dashed #f39c12;
+      border-radius: 16px;
+      color: #f39c12;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="mainContainer">
+    <header>
+      <h1>HASTUR COUNTER</h1>
+      <button class="btn-pip" id="btnPip" type="button">📌 PiP最前面表示</button>
+    </header>
+
+    <div class="pip-placeholder" id="pipPlaceholder">
+      カウンターは小窓（Picture-in-Picture）で表示中です
+    </div>
+
+    <div id="pipContent" style="display: flex; flex-direction: column; gap: 16px;">
+      <!-- 目標設定カード -->
+      <div class="goal-card">
+        <div class="goal-input-row">
+          <span class="goal-label">🎯 目標ヒット数:</span>
+          <input type="number" id="goalInput" class="goal-input" min="1" value="100">
+          <button class="btn-goal-set" id="btnGoalSet" type="button">設定</button>
+        </div>
+        <div class="goal-status-row">
+          <span>目標まであと:</span>
+          <span id="remainText" class="remain-val">100 Hits</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+      </div>
+
+      <div class="counter-card">
+        <div class="match-tag" id="currentMatchTag">第 1 試合</div>
+        
+        <div class="display-group">
+          <div class="display-box">
+            <div class="counter-label">現在の試合</div>
+            <div class="counter-display" id="matchHits">0</div>
+          </div>
+          <div class="display-box">
+            <div class="counter-label">現在のヒット数</div>
+            <div class="counter-display" id="totalHits">0</div>
+          </div>
+        </div>
+        
+        <button class="btn-main" id="btnHit" type="button">＋1 ヒット</button>
+
+        <div class="calc-row">
+          <button class="btn-calc" id="btnDivide" type="button">÷2</button>
+          <button class="btn-calc" id="btnAddFive" type="button">+5</button>
+        </div>
+
+        <button class="btn-undo" id="btnUndo" type="button">1つ取り消し (-1)</button>
+
+        <div class="action-row">
+          <button class="btn-sub" id="btnSave" type="button">記録する</button>
+          <button class="btn-sub btn-danger" id="btnReset" type="button">表示クリア</button>
+        </div>
+      </div>
+
+      <div class="stats-card">
+        <div class="stats-header">
+          <span class="stats-title">統計データ</span>
+          <button class="btn-clear-all" id="btnClearAll" type="button">全データ完全初期化</button>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-val" id="statMatches">0</div>
+            <div class="stat-lbl">完了試合数</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="statAvg">0.0</div>
+            <div class="stat-lbl">平均ヒット</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="statMax">0</div>
+            <div class="stat-lbl">最多ヒット</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="history-card">
+        <div class="stats-title" style="margin-bottom: 12px; border-bottom: 1px solid #2c3e50; padding-bottom: 6px;">過去の試合履歴</div>
+        <ul class="history-list" id="historyList">
+          <li style="color: #666666; text-align: center; font-size: 0.85rem;">履歴はありません</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shortcuts-guide">
+      【キーボード操作】<br>
+      [Space] / [Enter] : +1ヒット | [Z] / [Backspace] : -1<br>
+      [R] : 記録する | [L] : 表示クリア
+    </div>
+  </div>
+
+  <script>
+    function safeStorageGet(key, fallback) {
+      try {
+        var v = localStorage.getItem(key);
+        return v !== null ? v : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeStorageSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {}
+    }
+
+    function safeStorageClear() {
+      try {
+        localStorage.clear();
+      } catch (e) {}
+    }
+
+    var currentMatchCount = 0;
+    var baseTotalHits = parseInt(safeStorageGet("hastur_base_total", "0"), 10);
+    if (isNaN(baseTotalHits)) baseTotalHits = 0;
+
+    var targetGoal = parseInt(safeStorageGet("hastur_target_goal", "100"), 10);
+    if (isNaN(targetGoal) || targetGoal <= 0) targetGoal = 100;
+
+    var historyData = [];
+    try {
+      var raw = safeStorageGet("hastur_history", "[]");
+      historyData = JSON.parse(raw);
+      if (!Array.isArray(historyData)) historyData = [];
+    } catch (e) {
+      historyData = [];
+    }
+
+    var elMatchHits = document.getElementById("matchHits");
+    var elTotalHits = document.getElementById("totalHits");
+    var elCurrentMatchTag = document.getElementById("currentMatchTag");
+    var elBtnHit = document.getElementById("btnHit");
+    var elBtnDivide = document.getElementById("btnDivide");
+    var elBtnAddFive = document.getElementById("btnAddFive");
+    var elBtnUndo = document.getElementById("btnUndo");
+    var elBtnSave = document.getElementById("btnSave");
+    var elBtnReset = document.getElementById("btnReset");
+    var elBtnClearAll = document.getElementById("btnClearAll");
+    var elHistoryList = document.getElementById("historyList");
+    var elStatMatches = document.getElementById("statMatches");
+    var elStatAvg = document.getElementById("statAvg");
+    var elStatMax = document.getElementById("statMax");
+
+    var elGoalInput = document.getElementById("goalInput");
+    var elBtnGoalSet = document.getElementById("btnGoalSet");
+    var elRemainText = document.getElementById("remainText");
+    var elProgressBar = document.getElementById("progressBar");
+
+    var elBtnPip = document.getElementById("btnPip");
+    var elPipContent = document.getElementById("pipContent");
+    var elPipPlaceholder = document.getElementById("pipPlaceholder");
+    var pipWindow = null;
+
+    if (elGoalInput) elGoalInput.value = targetGoal;
+
+    function renderAll() {
+      try {
+        var calculatedTotal = baseTotalHits + currentMatchCount;
+        if (elMatchHits) elMatchHits.textContent = currentMatchCount;
+        if (elTotalHits) elTotalHits.textContent = calculatedTotal;
+        if (elCurrentMatchTag) elCurrentMatchTag.textContent = "第 " + (historyData.length + 1) + " 試合";
+
+        var remain = targetGoal - calculatedTotal;
+        if (elRemainText) {
+          if (remain <= 0) {
+            elRemainText.textContent = "🎉 目標達成！";
+            elRemainText.className = "remain-val goal-achieved";
+          } else {
+            elRemainText.textContent = remain + " Hits";
+            elRemainText.className = "remain-val";
+          }
+        }
+
+        if (elProgressBar) {
+          var pct = targetGoal > 0 ? Math.min(100, Math.max(0, (calculatedTotal / targetGoal) * 100)) : 100;
+          elProgressBar.style.width = pct + "%";
+        }
+
+        if (elHistoryList) {
+          elHistoryList.innerHTML = "";
+          if (historyData.length === 0) {
+            elHistoryList.innerHTML = '<li style="color: #666666; text-align: center; font-size: 0.85rem;">履歴はありません</li>';
+          } else {
+            historyData.slice().reverse().forEach(function(hits, idx) {
+              var matchNum = historyData.length - idx;
+              var li = document.createElement("li");
+              li.className = "history-item";
+              li.innerHTML = "<span>第 " + matchNum + " 試合</span><strong>" + hits + " Hits</strong>";
+              elHistoryList.appendChild(li);
+            });
+          }
+        }
+
+        var matches = historyData.length;
+        var total = historyData.reduce(function(a, b) { return a + b; }, 0);
+        var avg = matches > 0 ? (total / matches).toFixed(1) : "0.0";
+        var max = matches > 0 ? Math.max.apply(null, historyData) : 0;
+
+        if (elStatMatches) elStatMatches.textContent = matches;
+        if (elStatAvg) elStatAvg.textContent = avg;
+        if (elStatMax) elStatMax.textContent = max;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function addHit() {
+      currentMatchCount++;
+      renderAll();
+    }
+
+    function divideHit() {
+      if (currentMatchCount > 0) {
+        currentMatchCount = Math.floor(currentMatchCount / 2);
+        renderAll();
+      }
+    }
+
+    function addFiveHits() {
+      currentMatchCount += 5;
+      renderAll();
+    }
+
+    function undoHit() {
+      if (currentMatchCount > 0) {
+        currentMatchCount--;
+        renderAll();
+      }
+    }
+
+    function saveMatch() {
+      historyData.push(currentMatchCount);
+      safeStorageSet("hastur_history", JSON.stringify(historyData));
+      
+      baseTotalHits += currentMatchCount;
+      safeStorageSet("hastur_base_total", baseTotalHits.toString());
+
+      currentMatchCount = 0;
+      renderAll();
+    }
+
+    function resetCurrentCounts() {
+      if (confirm("現在の試合とヒット数の表示を0にクリアしますか？（過去の試合履歴は残ります）")) {
+        currentMatchCount = 0;
+        baseTotalHits = 0;
+        safeStorageSet("hastur_base_total", "0");
+        renderAll();
+      }
+    }
+
+    function clearAllData() {
+      if (confirm("【確認】全データ（過去履歴・累計ヒット・目標設定）を削除して完全に初期化しますか？")) {
+        safeStorageClear();
+        currentMatchCount = 0;
+        baseTotalHits = 0;
+        targetGoal = 100;
+        historyData = [];
+        if (elGoalInput) elGoalInput.value = 100;
+        renderAll();
+      }
+    }
+
+    function setGoal() {
+      if (!elGoalInput) return;
+      var val = parseInt(elGoalInput.value, 10);
+      if (!isNaN(val) && val > 0) {
+        targetGoal = val;
+        safeStorageSet("hastur_target_goal", targetGoal.toString());
+        renderAll();
+      }
+      elGoalInput.blur();
+    }
+
+    async function togglePip() {
+      if (!("documentPictureInPicture" in window)) {
+        alert("お使いのブラウザはPiP最前面表示に対応していません。Google ChromeまたはMicrosoft Edgeをご利用ください。");
+        return;
+      }
+
+      if (pipWindow) {
+        pipWindow.close();
+        return;
+      }
+
+      try {
+        pipWindow = await window.documentPictureInPicture.requestWindow({
+          width: 420,
+          height: 600
+        });
+
+        // スタイルシートの同期
+        [...document.styleSheets].forEach((styleSheet) => {
+          try {
+            const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+            const style = document.createElement('style');
+            style.textContent = cssRules;
+            pipWindow.document.head.appendChild(style);
+          } catch (e) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.type = styleSheet.type;
+            link.href = styleSheet.href;
+            pipWindow.document.head.appendChild(link);
+          }
+        });
+
+        // 閉じたとき元に戻す処理
+        pipWindow.addEventListener("pagehide", () => {
+          document.getElementById("mainContainer").appendChild(elPipContent);
+          elPipPlaceholder.style.display = "none";
+          elBtnPip.textContent = "📌 PiP最前面表示";
+          pipWindow = null;
+        });
+
+        // 要素をPiPウィンドウへ移動
+        pipWindow.document.body.appendChild(elPipContent);
+        pipWindow.document.body.style.backgroundColor = "#0b0c10";
+        pipWindow.document.body.style.padding = "10px";
+
+        // 元画面にはプレースホルダー表示
+        elPipPlaceholder.style.display = "block";
+        elBtnPip.textContent = "❌ PiPを閉じる";
+
+        // PiP内キーボードショートカット対応
+        pipWindow.addEventListener("keydown", handleKeydown);
+
+      } catch (err) {
+        console.error("PiP Error:", err);
+      }
+    }
+
+    if (elBtnHit) elBtnHit.addEventListener("click", addHit);
+    if (elBtnDivide) elBtnDivide.addEventListener("click", divideHit);
+    if (elBtnAddFive) elBtnAddFive.addEventListener("click", addFiveHits);
+    if (elBtnUndo) elBtnUndo.addEventListener("click", undoHit);
+    if (elBtnSave) elBtnSave.addEventListener("click", saveMatch);
+    if (elBtnReset) elBtnReset.addEventListener("click", resetCurrentCounts);
+    if (elBtnClearAll) elBtnClearAll.addEventListener("click", clearAllData);
+    if (elBtnGoalSet) elBtnGoalSet.addEventListener("click", setGoal);
+    if (elBtnPip) elBtnPip.addEventListener("click", togglePip);
+
+    if (elGoalInput) {
+      elGoalInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          setGoal();
+        }
+      });
+    }
+
+    function handleKeydown(e) {
+      var activeEl = (pipWindow ? pipWindow.document.activeElement : document.activeElement);
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
+        return;
+      }
+
+      if (e.code === "Space" || e.code === "Enter") {
+        e.preventDefault();
+        addHit();
+      } else if (e.code === "KeyZ" || e.code === "Backspace") {
+        e.preventDefault();
+        undoHit();
+      } else if (e.code === "KeyR") {
+        e.preventDefault();
+        saveMatch();
+      } else if (e.code === "KeyL") {
+        e.preventDefault();
+        resetCurrentCounts();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeydown);
+
+    renderAll();
+  </script>
+</body>
+</html>
